@@ -4,27 +4,37 @@ import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import { useSpeechRecognition } from "react-speech-recognition";
 import { IcOutlineMic, IcOutlineMicOff } from "../icons";
 import { Message, ViaryContent } from "@/models/viary";
 import { useForm } from "react-hook-form";
+import "./style.css";
+
+const getSpecialDays = () => {
+  const now = new Date();
+  let lastweek = new Date(now);
+  lastweek.setDate(now.getDate() - 7);
+  let tmr = new Date(now);
+  tmr.setDate(now.getDate() + 1);
+  return {
+    now,
+    lastweek,
+    tmr,
+  };
+};
 
 const DateSection = () => {
-  let now: Date = new Date();
-  let tmr: Date = new Date();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
-  useEffect(() => {
-    now = new Date();
-    setSelectedDate(now);
-    tmr = now;
-    tmr.setDate(now.getDate() + 1);
-  }, []);
+  const { now, lastweek } = getSpecialDays();
+  const [selectedDate, setSelectedDate] = useState<Date>(now);
 
   return (
-    <div className="">
+    <div className="max-w-[60vw] m-auto">
       <FullCalendar
-        height={"30vh"}
+        validRange={(_) => {
+          return {
+            end: now,
+          };
+        }}
+        height={"40vh"}
         headerToolbar={{
           left: "",
           center: "title",
@@ -36,16 +46,19 @@ const DateSection = () => {
         ]}
         eventContent={() => {
           return (
-            <div>
+            <div className="w-full h-full bg-primary-400 text-white text-center p-2 rounded-sm">
               <p className="text-md m-auto">選択中</p>
             </div>
           );
         }}
-        eventBackgroundColor="bg-slate-300"
         locale="ja"
         initialView="dayGridTwoWeek"
-        initialDate={now}
+        initialDate={lastweek}
         dateClick={({ date }) => {
+          if (date > now) {
+            alert("未来の日付は指定できません");
+            return;
+          }
           setSelectedDate(date);
         }}
         views={{
@@ -84,10 +97,12 @@ const SpeechButton = (props: { isSpeeching: boolean; onClick: () => void }) => {
 };
 
 export const SpeechSection = () => {
+  const [availableAudioDevices, setAvailableAudioDevices] = useState<
+    MediaDeviceInfo[]
+  >([]);
   const [isMicActive, setIsMicActive] = useState(false);
   const [message, setMessage] = useState<Message>({ content: "" });
   const [messages, setMessages] = useState<Message[]>([]);
-  const recognition = useSpeechRecognition();
 
   const {
     register,
@@ -95,28 +110,76 @@ export const SpeechSection = () => {
     formState: { errors },
   } = useForm();
 
-  useEffect(() => {
-    recognition.listening = isMicActive;
-  }, [isMicActive]);
+  useEffect(() => {}, [isMicActive]);
 
+  useEffect(() => {
+    const handler = async () => {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      devices.forEach((_device) => {
+        const device: MediaDeviceInfo = {
+          deviceId: _device.deviceId === "" ? "deviceId" : _device.deviceId,
+          label: _device.label === "" ? "microphone" : _device.label,
+          groupId: _device.groupId === "" ? "groupId" : _device.groupId,
+          kind: _device.kind,
+          toJSON: () => {},
+        };
+        if (device.kind == "audioinput") {
+          setAvailableAudioDevices((availableAudioDevices) => {
+            if (
+              availableAudioDevices
+                .map((d) => d.deviceId)
+                .includes(device.deviceId)
+            ) {
+              availableAudioDevices = availableAudioDevices.filter(
+                (d) => d.deviceId != device.deviceId
+              );
+            } else {
+              availableAudioDevices.push(device);
+            }
+            console.log("newAvailableAudioDevices", availableAudioDevices);
+            return availableAudioDevices;
+          });
+        }
+      });
+    };
+    setTimeout(handler, 1000);
+    navigator.mediaDevices.addEventListener("devicechange", async () => {
+      await handler();
+    });
+  }, []);
   return (
     <div>
-      <SpeechButton
-        isSpeeching={isMicActive}
-        onClick={() => {
-          setIsMicActive(!isMicActive);
-        }}
-      ></SpeechButton>
-      <div className="container shadow m-2 p-4 rounded-lg bg-gray-50">
-        <form onSubmit={handleSubmit((data) => console.log(data))}>
+      <div className="flex flex-row p-4">
+        <select className="m-2" id="audio-device-select" title="audio-devices">
+          <option value="">利用するオーディオデバイス</option>
+          {availableAudioDevices.map((device) => {
+            return (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label}
+              </option>
+            );
+          })}
+        </select>
+        <SpeechButton
+          isSpeeching={isMicActive}
+          onClick={() => {
+            setIsMicActive(!isMicActive);
+          }}
+        ></SpeechButton>
+      </div>
+      <div className="container h-70 shadow m-2 p-4 rounded-lg bg-gray-50">
+        <form
+          onSubmit={handleSubmit(({ content }) => {
+            setMessage(message + content);
+          })}
+        >
           <textarea
-            className="border-2 w-full"
+            className="border-2 w-full h-40"
+            placeholder="ここに日記を書きましょう"
             {...register("content", { required: true })}
           />
           <div className="h-2"></div>
-          <p className="text-red-600">
-            {errors.content && <p>空欄にできません</p>}
-          </p>
+          <p className="text-red-600">{errors.content && "空欄にできません"}</p>
           <div className="h-2"></div>
           <input
             type="submit"
@@ -129,18 +192,29 @@ export const SpeechSection = () => {
   );
 };
 
+const StackedMessageSection = () => {
+  return <div></div>;
+};
+
 export const CreateViary = (props: {
   onCommit: (content: ViaryContent) => void;
 }) => {
   return (
     <div className="w-4/5 m-auto p-2">
-      <p className="font-medium">日付</p>
+      <div className="p-2">
+        <p className="font-medium border-l-2 pl-1 border-primary-600">日付</p>
+      </div>
       <div className="p-2">
         <DateSection></DateSection>
       </div>
-      <p className="font-medium">入力</p>
+      <div className="p-2">
+        <p className="font-medium border-l-2 pl-1 border-primary-600">入力</p>
+      </div>
       <div className="p-2">
         <SpeechSection></SpeechSection>
+      </div>
+      <div className="p-2">
+        <StackedMessageSection></StackedMessageSection>
       </div>
     </div>
   );
