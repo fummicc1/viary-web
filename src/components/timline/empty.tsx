@@ -1,3 +1,5 @@
+"use client";
+
 import { CreateViary } from "../create/create";
 
 export const EmptyTimeline = () => {
@@ -9,7 +11,7 @@ export const EmptyTimeline = () => {
         </p>
       </div>
       <div className="divide-y"></div>
-      <CreateViary></CreateViary>
+      <CreateViary onCommit={(content) => {}}></CreateViary>
     </div>
   );
 };

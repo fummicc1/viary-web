@@ -6,6 +6,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import { useSpeechRecognition } from "react-speech-recognition";
 import { IcOutlineMic, IcOutlineMicOff } from "../icons";
+import { Message, ViaryContent } from "@/models/viary";
+import { useForm } from "react-hook-form";
 
 const DateSection = () => {
   let now: Date = new Date();
@@ -83,7 +85,15 @@ const SpeechButton = (props: { isSpeeching: boolean; onClick: () => void }) => {
 
 export const SpeechSection = () => {
   const [isMicActive, setIsMicActive] = useState(false);
+  const [message, setMessage] = useState<Message>({ content: "" });
+  const [messages, setMessages] = useState<Message[]>([]);
   const recognition = useSpeechRecognition();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
   useEffect(() => {
     recognition.listening = isMicActive;
@@ -97,11 +107,27 @@ export const SpeechSection = () => {
           setIsMicActive(!isMicActive);
         }}
       ></SpeechButton>
+      <div className="container shadow m-2 p-4 rounded-lg w-fit">
+        <form onSubmit={handleSubmit((data) => console.log(data))}>
+          <input
+            className="border-2"
+            {...register("content", { required: true })}
+          />
+          <p>{errors.content && <p>空欄にできません</p>}</p>
+          <input
+            type="submit"
+            value={"保存"}
+            className="bg-primary-400 px-4 py-2 rounded-md text-white"
+          />
+        </form>
+      </div>
     </div>
   );
 };
 
-export const CreateViary = () => {
+export const CreateViary = (props: {
+  onCommit: (content: ViaryContent) => void;
+}) => {
   return (
     <div className="w-4/5 m-auto p-2">
       <p className="font-medium">日付</p>

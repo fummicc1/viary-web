@@ -1,14 +1,14 @@
-class Viary {
+interface ViaryContent {
+  date: Date;
   messages: Message[];
+}
 
-  constructor(args: { messages: Message[] }) {
-    const { messages } = args;
-    this.messages = messages;
-  }
+interface Viary extends ViaryContent {
+  id: string;
 }
 
 interface Message {
   content: string;
 }
 
-export { Viary, type Message };
+export { type Viary, type ViaryContent, type Message };
