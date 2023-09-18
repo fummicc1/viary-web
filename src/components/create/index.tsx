@@ -107,13 +107,17 @@ export const SpeechSection = () => {
           setIsMicActive(!isMicActive);
         }}
       ></SpeechButton>
-      <div className="container shadow m-2 p-4 rounded-lg w-fit">
+      <div className="container shadow m-2 p-4 rounded-lg bg-gray-50">
         <form onSubmit={handleSubmit((data) => console.log(data))}>
-          <input
-            className="border-2"
+          <textarea
+            className="border-2 w-full"
             {...register("content", { required: true })}
           />
-          <p>{errors.content && <p>空欄にできません</p>}</p>
+          <div className="h-2"></div>
+          <p className="text-red-600">
+            {errors.content && <p>空欄にできません</p>}
+          </p>
+          <div className="h-2"></div>
           <input
             type="submit"
             value={"保存"}
