@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -100,6 +100,22 @@ export const SpeechSection = () => {
   const [availableAudioDevices, setAvailableAudioDevices] = useState<
     MediaDeviceInfo[]
   >([]);
+  const speechRecognitionList = useMemo(() => {
+    const grammar =
+      "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;";
+    const grammerList = new webkitSpeechGrammarList();
+    grammerList.addFromString(grammar, 1);
+    return grammerList;
+  }, []);
+  const speechRecognition = useMemo(() => {
+    const recog = new webkitSpeechRecognition();
+    recog.grammars = speechRecognitionList;
+    recog.continuous = true;
+    recog.lang = "en-US";
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+    return recog;
+  }, [speechRecognitionList]);
   const [isMicActive, setIsMicActive] = useState(false);
   const [message, setMessage] = useState<Message>({ content: "" });
   const [messages, setMessages] = useState<Message[]>([]);
@@ -110,7 +126,17 @@ export const SpeechSection = () => {
     formState: { errors },
   } = useForm();
 
-  useEffect(() => {}, [isMicActive]);
+  useEffect(() => {
+    if (isMicActive) {
+      speechRecognition.start();
+      speechRecognition.onresult = (e) => {
+        const { transcript } = e.results[0][0];
+        console.log("transcript", transcript);
+      };
+    } else {
+      speechRecognition.stop();
+    }
+  }, [isMicActive]);
 
   useEffect(() => {
     const handler = async () => {
@@ -124,21 +150,20 @@ export const SpeechSection = () => {
           toJSON: () => {},
         };
         if (device.kind == "audioinput") {
-          setAvailableAudioDevices((availableAudioDevices) => {
-            if (
-              availableAudioDevices
-                .map((d) => d.deviceId)
-                .includes(device.deviceId)
-            ) {
-              availableAudioDevices = availableAudioDevices.filter(
-                (d) => d.deviceId != device.deviceId
-              );
-            } else {
-              availableAudioDevices.push(device);
-            }
-            console.log("newAvailableAudioDevices", availableAudioDevices);
-            return availableAudioDevices;
-          });
+          let newAvailableAudioDevices = availableAudioDevices;
+          if (
+            availableAudioDevices
+              .map((d) => d.deviceId)
+              .includes(device.deviceId)
+          ) {
+            newAvailableAudioDevices = availableAudioDevices.filter(
+              (d) => d.deviceId != device.deviceId
+            );
+          } else {
+            newAvailableAudioDevices.push(device);
+          }
+          console.log("newAvailableAudioDevices", newAvailableAudioDevices);
+          setAvailableAudioDevices(newAvailableAudioDevices);
         }
       });
     };
