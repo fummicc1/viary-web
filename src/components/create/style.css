@@ -1,0 +1,30 @@
+.fc  .fc-today-button {
+    background-color: #ff6982;
+    border: none;
+}
+
+ .fc .fc-next-button {
+    background-color: #ff6982;
+    border: none;
+}
+
+.fc .fc-button-primary {
+    background-color: #ff6982;
+    border: none;
+}
+
+
+.fc  .fc-today-button:disabled {
+    background-color: #ff6982;
+    border: none;
+}
+
+ .fc .fc-next-button:disabled {
+    background-color: #ff6982;
+    border: none;
+}
+
+.fc .fc-button-primary:disabled {
+    background-color: #ff6982;
+    border: none;
+}
