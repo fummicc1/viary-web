@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateViary } from "../create";
+import { CreateViary } from "../../../components/create";
 
 export const EmptyTimeline = () => {
   return (

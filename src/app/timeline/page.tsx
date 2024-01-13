@@ -1,4 +1,4 @@
-import { EmptyTimeline } from "@/components/timline/empty";
+import { EmptyTimeline } from "@/app/timeline/_private_components/empty";
 import { Viary } from "@/models/viary";
 
 export interface TimelineState {

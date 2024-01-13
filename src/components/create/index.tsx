@@ -11,19 +11,19 @@ import "./style.css";
 
 const getSpecialDays = () => {
   const now = new Date();
-  let lastweek = new Date(now);
-  lastweek.setDate(now.getDate() - 7);
+  let lastWeek = new Date(now);
+  lastWeek.setDate(now.getDate() - 7);
   let tmr = new Date(now);
   tmr.setDate(now.getDate() + 1);
   return {
     now,
-    lastweek,
+    lastWeek,
     tmr,
   };
 };
 
 const DateSection = () => {
-  const { now, lastweek } = getSpecialDays();
+  const { now, lastWeek } = getSpecialDays();
   const [selectedDate, setSelectedDate] = useState<Date>(now);
 
   return (
@@ -53,7 +53,7 @@ const DateSection = () => {
         }}
         locale="ja"
         initialView="dayGridTwoWeek"
-        initialDate={lastweek}
+        initialDate={lastWeek}
         dateClick={({ date }) => {
           if (date > now) {
             alert("未来の日付は指定できません");
@@ -72,9 +72,9 @@ const DateSection = () => {
   );
 };
 
-const SpeechButton = (props: { isSpeeching: boolean; onClick: () => void }) => {
-  const { isSpeeching, onClick } = props;
-  if (!isSpeeching) {
+const SpeechButton = (props: { inSpeech: boolean; onClick: () => void }) => {
+  const { inSpeech, onClick } = props;
+  if (!inSpeech) {
     return (
       <button
         className="px-4 py-2 bg-primary-400 hover:scale-105 text-white rounded-full flex flex-row items-center"
@@ -100,22 +100,17 @@ export const SpeechSection = () => {
   const [availableAudioDevices, setAvailableAudioDevices] = useState<
     MediaDeviceInfo[]
   >([]);
-  const speechRecognitionList = useMemo(() => {
+  const speechRecognition = useMemo(() => {
     const grammar =
       "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;";
-    const grammerList = new webkitSpeechGrammarList();
-    grammerList.addFromString(grammar, 1);
-    return grammerList;
+    const speechRecognition = new webkitSpeechRecognition();
+    speechRecognition.grammars.addFromString(grammar, 1);
+    speechRecognition.continuous = true;
+    speechRecognition.lang = "en-US";
+    speechRecognition.interimResults = false;
+    speechRecognition.maxAlternatives = 1;
+    return speechRecognition;
   }, []);
-  const speechRecognition = useMemo(() => {
-    const recog = new webkitSpeechRecognition();
-    recog.grammars = speechRecognitionList;
-    recog.continuous = true;
-    recog.lang = "en-US";
-    recog.interimResults = false;
-    recog.maxAlternatives = 1;
-    return recog;
-  }, [speechRecognitionList]);
   const [isMicActive, setIsMicActive] = useState(false);
   const [message, setMessage] = useState<Message>({ content: "" });
   const [messages, setMessages] = useState<Message[]>([]);
@@ -136,7 +131,7 @@ export const SpeechSection = () => {
     } else {
       speechRecognition.stop();
     }
-  }, [isMicActive]);
+  }, [isMicActive, speechRecognition]);
 
   useEffect(() => {
     const handler = async () => {
@@ -171,7 +166,7 @@ export const SpeechSection = () => {
     navigator.mediaDevices.addEventListener("devicechange", async () => {
       await handler();
     });
-  }, []);
+  }, [availableAudioDevices]);
   return (
     <div>
       <div className="flex flex-row p-4">
@@ -186,7 +181,7 @@ export const SpeechSection = () => {
           })}
         </select>
         <SpeechButton
-          isSpeeching={isMicActive}
+          inSpeech={isMicActive}
           onClick={() => {
             setIsMicActive(!isMicActive);
           }}
